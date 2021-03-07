@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,11 +25,12 @@ import kotlin.math.sin
 @Composable
 fun WatchFace(
     modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colors.primary,
     content: @Composable () -> Unit,
 ) {
     Layout(modifier = modifier
         .clip(CircleShape)
-        .background(Color.LightGray)
+        .background(color)
         .padding(16.dp),
         content = content
     ) { measurables, constraints ->
@@ -51,6 +53,7 @@ fun WatchFace(
 @Composable
 fun DraggableWatchFace(
     modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colors.primary,
     content: @Composable () -> Unit,
 ) {
     var outputAngle by remember { mutableStateOf(0f) }
@@ -59,7 +62,7 @@ fun DraggableWatchFace(
     var coords by remember { mutableStateOf(Offset.Zero) }
     var center by remember { mutableStateOf(Offset.Zero) }
 
-    WatchFace(modifier
+    WatchFace(modifier = modifier
         .onSizeChanged { center = it.center.toOffset() }
         .pointerInput(Unit) {
             detectDragGestures(
@@ -78,6 +81,7 @@ fun DraggableWatchFace(
             )
         }
         .rotate(outputAngle),
+        color = color,
         content = content)
 }
 
