@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
@@ -51,36 +52,67 @@ fun WatchFace(
 }
 
 @Composable
+fun rememberWatchFaceState(onDrag: (Float) -> Unit): WatchFaceState {
+    val onDragState = rememberUpdatedState(onDrag)
+    return remember { WatchFaceState { onDragState.value.invoke(it) } }
+}
+
+class WatchFaceState(private val onDrag: (Float) -> Unit = {}) {
+    private val _angle: MutableState<Float> = mutableStateOf(0f)
+    val angle: State<Float> = _angle
+    private var startAngle = (0f)
+    private var prevAngle = (0f)
+    private var coords = (Offset.Zero)
+    private var center = (Offset.Zero)
+    private var isDragging = false
+
+    fun setAngle(angle: Float) {
+        _angle.value = angle
+    }
+
+    fun setFaceCenter(offset: Offset) {
+        center = offset
+    }
+
+    fun onDragStart(offset: Offset) {
+        prevAngle = angle.value
+        coords = offset - center
+        startAngle = coords.angle
+        isDragging = true
+    }
+
+    fun onDragEnd() {
+        isDragging = false
+    }
+
+    fun onUserDrag(change: PointerInputChange, dragAmount: Offset) {
+        if (isDragging) {
+            _angle.value = prevAngle + coords.angle - startAngle
+            onDrag(angle.value)
+            coords += dragAmount
+        }
+        change.consumeAllChanges()
+    }
+}
+
+@Composable
 fun DraggableWatchFace(
     modifier: Modifier = Modifier,
+    state: WatchFaceState,
     color: Color = MaterialTheme.colors.primary,
     content: @Composable () -> Unit,
 ) {
-    var outputAngle by remember { mutableStateOf(0f) }
-    var startAngle by remember { mutableStateOf(0f) }
-    var prevAngle by remember { mutableStateOf(0f) }
-    var coords by remember { mutableStateOf(Offset.Zero) }
-    var center by remember { mutableStateOf(Offset.Zero) }
 
     WatchFace(modifier = modifier
-        .onSizeChanged { center = it.center.toOffset() }
+        .onSizeChanged { state.setFaceCenter(it.center.toOffset()) }
         .pointerInput(Unit) {
             detectDragGestures(
-                onDragStart = {
-                    prevAngle = outputAngle
-                    coords = it - center
-                    startAngle = coords.angle
-                },
-                onDragEnd = {
-                },
-                onDrag = { change, dragAmount ->
-                    outputAngle = prevAngle + coords.angle - startAngle
-                    coords += dragAmount
-                    change.consumeAllChanges()
-                }
+                onDragStart = { state.onDragStart(it) },
+                onDragEnd = {state.onDragEnd()},
+                onDrag = { change, dragAmount -> state.onUserDrag(change, dragAmount)}
             )
         }
-        .rotate(outputAngle),
+        .rotate(state.angle.value),
         color = color,
         content = content)
 }

@@ -8,6 +8,8 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -20,19 +22,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.androiddevchallenge.R
 import com.example.androiddevchallenge.ui.component.DraggableWatchFace
+import com.example.androiddevchallenge.ui.component.WatchFaceState
 import com.example.androiddevchallenge.ui.theme.purple200
 import com.example.androiddevchallenge.ui.theme.purple500
 import com.example.androiddevchallenge.ui.theme.purple700
 import dev.chrisbanes.accompanist.insets.navigationBarsPadding
 
+class TimerState {
+    val secAngle = mutableStateOf(0f)
+    val secState: WatchFaceState = WatchFaceState {
+        secAngle.value = it
+        updateWatchFaces()
+    }
+    val minState: WatchFaceState = WatchFaceState{
+        secAngle.value = it * 12
+        updateWatchFaces()
+    }
+    val hourState: WatchFaceState = WatchFaceState {
+        secAngle.value = it * 12 * 12
+        updateWatchFaces()
+    }
+
+    private fun updateWatchFaces() {
+        secState.setAngle(secAngle.value)
+        minState.setAngle(secAngle.value / 12)
+        hourState.setAngle(secAngle.value / (12 * 12))
+    }
+}
+
 @Composable
 fun Timer() {
     val step = with(LocalDensity.current) { 96.dp.toPx().toInt() }
+
+    val timerState = remember { TimerState() }
     Box(Modifier.fillMaxSize()) {
 
         DraggableWatchFace(modifier = Modifier
             .requiredSize(600.dp)
             .watchFaceLayout(step * 2),
+            state = timerState.hourState,
             color = purple700
         ) {
             getWatchFaceText()
@@ -41,6 +69,7 @@ fun Timer() {
         DraggableWatchFace(modifier = Modifier
             .requiredSize(600.dp)
             .watchFaceLayout(step),
+            state = timerState.minState,
             color = purple500
         ) {
             getWatchFaceText()
@@ -49,6 +78,7 @@ fun Timer() {
         DraggableWatchFace(modifier = Modifier
             .requiredSize(600.dp)
             .watchFaceLayout(),
+            state = timerState.secState,
             color = purple200
         ) {
             getWatchFaceText()
