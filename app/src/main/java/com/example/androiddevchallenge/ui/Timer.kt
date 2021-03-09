@@ -183,7 +183,7 @@ fun Timer() {
 private fun getWatchFaceText(length: Int = 60) {
     val items = (0 until length).toList()
     items.forEachIndexed { index, it ->
-        BasicText("$it", modifier = Modifier.rotate(360f / items.size * index), style = MaterialTheme.typography.body1)
+        BasicText("$it".padStart(2,'0'), modifier = Modifier.rotate(360f / items.size * index), style = MaterialTheme.typography.body1)
     }
 }
 
