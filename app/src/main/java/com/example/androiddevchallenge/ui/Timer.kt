@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.example.androiddevchallenge.ui
 
 import androidx.compose.animation.animateContentSize
@@ -9,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -126,44 +140,50 @@ fun Timer() {
 
     Box(Modifier.fillMaxSize()) {
 
-        Text(text = timerState.time.value,
+        Text(
+            text = timerState.time.value,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .systemBarsPadding()
                 .padding(top = 64.dp),
-            style = TextStyle(fontFamily = FontFamily(Font(R.font.recursive_regular)), fontSize = 50.sp))
+            style = TextStyle(fontFamily = FontFamily(Font(R.font.recursive_regular)), fontSize = 50.sp)
+        )
 
-        DraggableWatchFace(modifier = Modifier
-            .requiredSize(1100.dp)
-            .watchFaceLayout(step * 3 + bottomPadding),
+        DraggableWatchFace(
+            modifier = Modifier
+                .requiredSize(1100.dp)
+                .watchFaceLayout(step * 3 + bottomPadding),
             state = timerState.hourState,
             color = third
         ) {
             getWatchFaceText(24)
         }
 
-        DraggableWatchFace(modifier = Modifier
-            .requiredSize(1100.dp)
-            .watchFaceLayout(step * 2 + bottomPadding),
+        DraggableWatchFace(
+            modifier = Modifier
+                .requiredSize(1100.dp)
+                .watchFaceLayout(step * 2 + bottomPadding),
             state = timerState.minState,
             color = second
         ) {
             getWatchFaceText()
         }
 
-        DraggableWatchFace(modifier = Modifier
-            .requiredSize(1100.dp)
-            .watchFaceLayout(step + bottomPadding),
+        DraggableWatchFace(
+            modifier = Modifier
+                .requiredSize(1100.dp)
+                .watchFaceLayout(step + bottomPadding),
             state = timerState.secState,
             color = first
         ) {
             getWatchFaceText()
         }
 
-        Button(modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .navigationBarsPadding()
-            .padding(bottom = 32.dp),
+        Button(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 32.dp),
             shape = CircleShape,
             onClick = {
                 countdownScope.launch {
@@ -173,9 +193,15 @@ fun Timer() {
                         timerState.pause()
                     }
                 }
-            }) {
+            }
+        ) {
             val text = if (!timerState.isRunning) "Start" else "Pause"
-            Text(text = text, style = MaterialTheme.typography.body2, modifier = Modifier.padding(8.dp).animateContentSize())
+            Text(
+                text = text, style = MaterialTheme.typography.body2,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .animateContentSize()
+            )
         }
     }
 }
@@ -184,7 +210,7 @@ fun Timer() {
 private fun getWatchFaceText(length: Int = 60) {
     val items = (0 until length).toList()
     items.forEachIndexed { index, it ->
-        Text("$it".padStart(2,'0'), modifier = Modifier.rotate(360f / items.size * index), style = MaterialTheme.typography.body1)
+        Text("$it".padStart(2, '0'), modifier = Modifier.rotate(360f / items.size * index), style = MaterialTheme.typography.body1)
     }
 }
 
