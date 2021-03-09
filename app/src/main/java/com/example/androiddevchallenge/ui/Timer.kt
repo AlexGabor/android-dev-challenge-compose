@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -29,10 +32,16 @@ import com.example.androiddevchallenge.ui.theme.purple500
 import com.example.androiddevchallenge.ui.theme.purple700
 import dev.chrisbanes.accompanist.insets.navigationBarsPadding
 import dev.chrisbanes.accompanist.insets.systemBarsPadding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
-class TimerState {
+private const val MAX_TIME_ANGLE = 24 * 60 * 360
+
+class TimerState(private val animationScope: CoroutineScope) {
     private val timerAngle = mutableStateOf(0f)
+
+    private val animatable = Animatable(0f)
 
     val time = mutableStateOf("00:00:00")
     private var seconds = 0
@@ -40,14 +49,17 @@ class TimerState {
     private var hours = 0
 
     val secState: WatchFaceState = WatchFaceState {
+        animationScope.coroutineContext.cancelChildren()
         timerAngle.value = it
         updateWatchFaces()
     }
     val minState: WatchFaceState = WatchFaceState {
+        animationScope.coroutineContext.cancelChildren()
         timerAngle.value = it * 60
         updateWatchFaces()
     }
     val hourState: WatchFaceState = WatchFaceState {
+        animationScope.coroutineContext.cancelChildren()
         timerAngle.value = it * 60 * 24
         updateWatchFaces()
     }
@@ -71,27 +83,38 @@ class TimerState {
         }
 
     private fun Float.coerceInTimerRange() = when {
-        this > 0 -> 24 * 60 * 360 - this
-        else -> -this
+        this > 0 -> (MAX_TIME_ANGLE - this.rem(MAX_TIME_ANGLE)).rem(MAX_TIME_ANGLE)
+        else -> -(this.rem(MAX_TIME_ANGLE))
     }
 
-    fun setAngle(value: Float) {
+    private fun setAngle(value: Float) {
         timerAngle.value = value
         updateWatchFaces()
     }
 
-    fun getAngle() = -timerAngle.value.coerceInTimerRange()
+    private fun getAngle() = -timerAngle.value.coerceInTimerRange()
 
-    val countdownTime: Int get() = timerAngle.value.angleToSec()
+    private val countdownTime: Int get() = timerAngle.value.angleToSec()
 
     private fun Float.angleToSec(): Int = (this.coerceInTimerRange() / (360 / 60)).floor()
+
+    fun start() {
+        animationScope.launch {
+            animatable.snapTo(getAngle())
+            animatable.animateTo(0f, tween(countdownTime * 1000, easing = LinearEasing)) {
+                setAngle(this.value)
+            }
+        }
+    }
 }
 
 @Composable
 fun Timer() {
     val step = with(LocalDensity.current) { 96.dp.toPx().toInt() }
 
-    val timerState = remember { TimerState() }
+    val countdownScope = rememberCoroutineScope()
+    val timerState = remember { TimerState(countdownScope) }
+
     Box(Modifier.fillMaxSize()) {
 
         Text(text = timerState.time.value,
@@ -128,22 +151,14 @@ fun Timer() {
             getWatchFaceText()
         }
 
-        val countdownScope = rememberCoroutineScope()
-        val animatableAngle = remember { Animatable(0f) }
-
-        if (animatableAngle.isRunning) {
-            timerState.setAngle(animatableAngle.value)
-        }
-
         Button(modifier = Modifier
             .align(Alignment.BottomCenter)
             .navigationBarsPadding()
             .padding(bottom = 16.dp), onClick = {
-                countdownScope.launch {
-                    animatableAngle.snapTo(timerState.getAngle())
-                    animatableAngle.animateTo(0f, tween(timerState.countdownTime * 1000, easing = LinearEasing))
-                }
-            }) {
+            countdownScope.launch {
+                timerState.start()
+            }
+        }) {
             Text(text = "Start")
         }
     }
