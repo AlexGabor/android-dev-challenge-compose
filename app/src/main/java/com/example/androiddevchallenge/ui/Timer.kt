@@ -1,5 +1,6 @@
 package com.example.androiddevchallenge.ui
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -44,6 +45,7 @@ class TimerState(private val animationScope: CoroutineScope) {
     private val timerAngle = mutableStateOf(0f)
 
     private val animatable = Animatable(0f)
+    val isRunning: Boolean get() = animatable.isRunning
 
     val time = mutableStateOf("00:00:00")
     private var seconds = 0
@@ -108,6 +110,10 @@ class TimerState(private val animationScope: CoroutineScope) {
             }
         }
     }
+
+    fun pause() {
+        animationScope.coroutineContext.cancelChildren()
+    }
 }
 
 @Composable
@@ -160,10 +166,15 @@ fun Timer() {
             shape = CircleShape,
             onClick = {
                 countdownScope.launch {
-                    timerState.start()
+                    if (!timerState.isRunning) {
+                        timerState.start()
+                    } else {
+                        timerState.pause()
+                    }
                 }
             }) {
-            Text(text = "Start", style = MaterialTheme.typography.body2, modifier = Modifier.padding(8.dp))
+            val text = if (!timerState.isRunning) "Start" else "Pause"
+            Text(text = text, style = MaterialTheme.typography.body2, modifier = Modifier.padding(8.dp).animateContentSize())
         }
     }
 }
