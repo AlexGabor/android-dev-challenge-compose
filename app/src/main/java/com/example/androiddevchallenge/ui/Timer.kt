@@ -119,6 +119,7 @@ class TimerState(private val animationScope: CoroutineScope) {
 @Composable
 fun Timer() {
     val step = with(LocalDensity.current) { 96.dp.toPx().toInt() }
+    val bottomPadding = with(LocalDensity.current) { 288.dp.toPx().toInt() }
 
     val countdownScope = rememberCoroutineScope()
     val timerState = remember { TimerState(countdownScope) }
@@ -134,7 +135,7 @@ fun Timer() {
 
         DraggableWatchFace(modifier = Modifier
             .requiredSize(1100.dp)
-            .watchFaceLayout(step * 2),
+            .watchFaceLayout(step * 3 + bottomPadding),
             state = timerState.hourState,
             color = third
         ) {
@@ -143,7 +144,7 @@ fun Timer() {
 
         DraggableWatchFace(modifier = Modifier
             .requiredSize(1100.dp)
-            .watchFaceLayout(step),
+            .watchFaceLayout(step * 2 + bottomPadding),
             state = timerState.minState,
             color = second
         ) {
@@ -152,7 +153,7 @@ fun Timer() {
 
         DraggableWatchFace(modifier = Modifier
             .requiredSize(1100.dp)
-            .watchFaceLayout(),
+            .watchFaceLayout(step + bottomPadding),
             state = timerState.secState,
             color = first
         ) {
@@ -189,7 +190,7 @@ private fun getWatchFaceText(length: Int = 60) {
 
 private fun Modifier.watchFaceLayout(offset: Int = 0) = this.layout { measurable, constraints ->
     val placeable = measurable.measure(constraints)
-    layout(placeable.width, placeable.height) {
-        placeable.place(constraints.maxWidth / 2 - placeable.width / 2, constraints.maxHeight - 1000 - offset)
+    layout(constraints.maxWidth, constraints.maxHeight) {
+        placeable.place(constraints.maxWidth / 2 - placeable.width / 2, constraints.maxHeight - offset)
     }
 }
