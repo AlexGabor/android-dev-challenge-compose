@@ -1,5 +1,8 @@
 package com.example.androiddevchallenge.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -7,9 +10,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -28,9 +29,10 @@ import com.example.androiddevchallenge.ui.theme.purple500
 import com.example.androiddevchallenge.ui.theme.purple700
 import dev.chrisbanes.accompanist.insets.navigationBarsPadding
 import dev.chrisbanes.accompanist.insets.systemBarsPadding
+import kotlinx.coroutines.launch
 
 class TimerState {
-    private val secAngle = mutableStateOf(0f)
+    private val timerAngle = mutableStateOf(0f)
 
     val time = mutableStateOf("00:00:00")
     private var seconds = 0
@@ -38,22 +40,22 @@ class TimerState {
     private var hours = 0
 
     val secState: WatchFaceState = WatchFaceState {
-        secAngle.value = it
+        timerAngle.value = it
         updateWatchFaces()
     }
     val minState: WatchFaceState = WatchFaceState {
-        secAngle.value = it * 60
+        timerAngle.value = it * 60
         updateWatchFaces()
     }
     val hourState: WatchFaceState = WatchFaceState {
-        secAngle.value = it * 60 * 24
+        timerAngle.value = it * 60 * 24
         updateWatchFaces()
     }
 
     private fun updateWatchFaces() {
-        secState.setAngle(secAngle.value)
-        minState.setAngle(secAngle.value / 60)
-        hourState.setAngle(secAngle.value / 60 / 24)
+        secState.setAngle(timerAngle.value)
+        minState.setAngle(timerAngle.value / 60)
+        hourState.setAngle(timerAngle.value / 60 / 24)
         seconds = (secState.angle.value / (360 / 60)).toTimeUnit(60)
         minutes = (minState.angle.value / (360 / 60)).toTimeUnit(60)
         hours = (hourState.angle.value / (360 / 24)).toTimeUnit(24)
@@ -62,11 +64,27 @@ class TimerState {
 
     private fun Float.floor(): Int = kotlin.math.floor(this).toInt()
 
-    private fun Float.toTimeUnit(other: Int): Int =
+    private fun Float.toTimeUnit(size: Int): Int =
         when {
-            this < 0 -> (other - this).floor().rem(other)
-            else -> (other - this.rem(other)).floor()
+            this < 0 -> (size - this).floor().rem(size)
+            else -> (size - this.rem(size)).floor().rem(size)
         }
+
+    private fun Float.coerceInTimerRange() = when {
+        this > 0 -> 24 * 60 * 360 - this
+        else -> -this
+    }
+
+    fun setAngle(value: Float) {
+        timerAngle.value = value
+        updateWatchFaces()
+    }
+
+    fun getAngle() = -timerAngle.value.coerceInTimerRange()
+
+    val countdownTime: Int get() = timerAngle.value.angleToSec()
+
+    private fun Float.angleToSec(): Int = (this.coerceInTimerRange() / (360 / 60)).floor()
 }
 
 @Composable
@@ -110,10 +128,22 @@ fun Timer() {
             getWatchFaceText()
         }
 
+        val countdownScope = rememberCoroutineScope()
+        val animatableAngle = remember { Animatable(0f) }
+
+        if (animatableAngle.isRunning) {
+            timerState.setAngle(animatableAngle.value)
+        }
+
         Button(modifier = Modifier
             .align(Alignment.BottomCenter)
             .navigationBarsPadding()
-            .padding(bottom = 16.dp), onClick = { /*TODO*/ }) {
+            .padding(bottom = 16.dp), onClick = {
+                countdownScope.launch {
+                    animatableAngle.snapTo(timerState.getAngle())
+                    animatableAngle.animateTo(0f, tween(timerState.countdownTime * 1000, easing = LinearEasing))
+                }
+            }) {
             Text(text = "Start")
         }
     }
