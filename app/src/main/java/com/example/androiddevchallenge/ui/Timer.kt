@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -27,9 +29,9 @@ import androidx.compose.ui.unit.sp
 import com.example.androiddevchallenge.R
 import com.example.androiddevchallenge.ui.component.DraggableWatchFace
 import com.example.androiddevchallenge.ui.component.WatchFaceState
-import com.example.androiddevchallenge.ui.theme.purple200
-import com.example.androiddevchallenge.ui.theme.purple500
-import com.example.androiddevchallenge.ui.theme.purple700
+import com.example.androiddevchallenge.ui.theme.first
+import com.example.androiddevchallenge.ui.theme.second
+import com.example.androiddevchallenge.ui.theme.third
 import dev.chrisbanes.accompanist.insets.navigationBarsPadding
 import dev.chrisbanes.accompanist.insets.systemBarsPadding
 import kotlinx.coroutines.CoroutineScope
@@ -128,7 +130,7 @@ fun Timer() {
             .requiredSize(1100.dp)
             .watchFaceLayout(step * 2),
             state = timerState.hourState,
-            color = purple700
+            color = third
         ) {
             getWatchFaceText(24)
         }
@@ -137,7 +139,7 @@ fun Timer() {
             .requiredSize(1100.dp)
             .watchFaceLayout(step),
             state = timerState.minState,
-            color = purple500
+            color = second
         ) {
             getWatchFaceText()
         }
@@ -146,7 +148,7 @@ fun Timer() {
             .requiredSize(1100.dp)
             .watchFaceLayout(),
             state = timerState.secState,
-            color = purple200
+            color = first
         ) {
             getWatchFaceText()
         }
@@ -154,12 +156,14 @@ fun Timer() {
         Button(modifier = Modifier
             .align(Alignment.BottomCenter)
             .navigationBarsPadding()
-            .padding(bottom = 16.dp), onClick = {
-            countdownScope.launch {
-                timerState.start()
-            }
-        }) {
-            Text(text = "Start")
+            .padding(bottom = 32.dp),
+            shape = CircleShape,
+            onClick = {
+                countdownScope.launch {
+                    timerState.start()
+                }
+            }) {
+            Text(text = "Start", style = MaterialTheme.typography.body2, modifier = Modifier.padding(8.dp))
         }
     }
 }
@@ -168,7 +172,7 @@ fun Timer() {
 private fun getWatchFaceText(length: Int = 60) {
     val items = (0 until length).toList()
     items.forEachIndexed { index, it ->
-        BasicText("$it", modifier = Modifier.rotate(360f / items.size * index), style = TextStyle(fontFamily = FontFamily(Font(R.font.recursive_regular)), fontSize = 30.sp))
+        BasicText("$it", modifier = Modifier.rotate(360f / items.size * index), style = MaterialTheme.typography.body1)
     }
 }
 
